@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prática de Bancada - Hardware & Conexões</title>
+  <!-- Supabase JS Client via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --success: #16a34a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px 12px; line-height: 1.5; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 24px; }
+    header h1 { font-size: 1.6rem; margin-bottom: 6px; }
+    header p { color: var(--text-muted); font-size: 0.9rem; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.85rem; font-weight: 600; color: #e2e8f0; }
+    input, select, textarea {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { min-height: 80px; resize: vertical; }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: #93c5fd;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 10px;
+    }
+    button:disabled { background: #475569; cursor: not-allowed; }
+    button:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .status-msg {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      display: none;
+      text-align: center;
+    }
+    .status-success { background: #14532d; color: #bbf7d0; }
+    .status-error { background: #7f1d1d; color: #fecaca; }
+
+    .preview-box {
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #090d16;
+      overflow: hidden;
+    }
+    .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Levantamento Prático de Bancada</h1>
+      <p>Inventário de Hardware, Cabeamento e Análise de Tecnologias</p>
+    </header>
+
+    <div class="card">
+      <form id="labForm">
+        <!-- IDENTIFICAÇÃO DA TURMA E EQUIPE -->
+        <div class="section-title">1. Identificação da Equipe</div>
+        <div class="grid grid-2" style="margin-bottom: 20px;">
+          <div class="form-group">
+            <label for="turma">Turma / Turno</label>
+            <input type="text" id="turma" placeholder="Ex: 2º Regular A, Turma 3001, Vespertino" required>
+          </div>
+          <div class="form-group">
+            <label for="grupo">Identificação do Grupo / Integrantes</label>
+            <input type="text" id="grupo" placeholder="Ex: Grupo 03 (Lucas, Ana, Marcos)" required>
+          </div>
+        </div>
+
+        <!-- DADOS TÉCNICOS DO COMPONENTE -->
+        <div class="section-title">2. Especificações do Item</div>
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label for="categoria">Categoria do Item</label>
+            <select id="categoria" required>
+              <option value="">Selecione a categoria...</option>
+              <option value="Processador (CPU)">Processador (CPU)</option>
+              <option value="Placa-Mãe">Placa-Mãe</option>
+              <option value="Memória RAM">Memória RAM</option>
+              <option value="Armazenamento (SSD / HDD)">Armazenamento (SSD / HDD)</option>
+              <option value="Fonte de Alimentação">Fonte de Alimentação</option>
+              <option value="Placa de Expansão (GPU, Rede, etc.)">Placa de Expansão (GPU, Rede...)</option>
+              <option value="Cabo e Conector de Dados">Cabo/Conexão de Dados (SATA, IDE, M.2, USB...)</option>
+              <option value="Cabo e Conector de Força">Cabo/Conector de Força (ATX 24p, EPS, PCIe...)</option>
+              <option value="Interface de Vídeo">Interface de Vídeo (HDMI, DisplayPort, VGA, DVI...)</option>
+              <option value="Painel Frontal / Conectores de Gabinete">Painel Frontal / Conectores de Gabinete</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="identificacao">Identificação / Modelo / Fabricante</label>
+            <input type="text" id="identificacao" placeholder="Ex: Core i5-10400, Kingston NV2 500GB, Cabo SATA III" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="padraoFisico">Padrão Físico, Soquete ou Encaixe (Chaveamento/Pinagem)</label>
+          <input type="text" id="padraoFisico" placeholder="Ex: Socket LGA 1200, DDR4 288 pinos, M.2 2280 Key M, Conector 7 pinos">
+        </div>
+
+        <div class="grid grid-2" style="margin-top: 14px;">
+          <div class="form-group">
+            <label for="descricao">Descrição Visual e Funcional do Item</label>
+            <textarea id="descricao" placeholder="Descreva o estado, pinos, travas de retenção, capacitores, marcas de serigrafia..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="tecnologias">Tecnologias Associadas & Comparação</label>
+            <textarea id="tecnologias" placeholder="Ex: Diferença entre barramento SATA III (6 Gb/s) vs PCIe Gen4 (64 Gb/s); AHCI vs NVMe; TDP térmico..."></textarea>
+          </div>
+        </div>
+
+        <!-- FOTO DO COMPONENTE -->
+        <div class="section-title" style="margin-top: 20px;">3. Registro Fotográfico</div>
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label for="fotoInput">Tirar Foto ou Escolher Arquivo</label>
+            <input type="file" id="fotoInput" accept="image/*" capture="environment">
+            <small style="color: var(--text-muted); font-size: 0.8rem;">A foto será comprimida automaticamente antes do envio.</small>
+          </div>
+          <div class="preview-box" id="previewContainer">
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma foto selecionada</span>
+          </div>
+        </div>
+
+        <button type="submit" id="btnSalvar">Enviar Registro para o Banco</button>
+        <div id="statusMsg" class="status-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // CONFIGURAÇÃO DO SUPABASE
+    // ==========================================
+    const SUPABASE_URL = https://dplblubihauwcugwrfom.supabase.co;
+    const SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwbGJsdWJpaGF1d2N1Z3dyZm9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NDM5NTQsImV4cCI6MjEwNjMxOTk1NH0.xSzleTH13E7qQe-6FuucX-CmM87I1EnyYwi4ndn3pxo;
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let compressedBlob = null;
+    const form = document.getElementById('labForm');
+    const fotoInput = document.getElementById('fotoInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const btnSalvar = document.getElementById('btnSalvar');
+    const statusMsg = document.getElementById('statusMsg');
+
+    // Recupera a Turma e o Grupo do localStorage para a equipe não precisar redigitar toda vez
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTurma = localStorage.getItem('lab_turma');
+      const savedGrupo = localStorage.getItem('lab_grupo');
+      if (savedTurma) document.getElementById('turma').value = savedTurma;
+      if (savedGrupo) document.getElementById('grupo').value = savedGrupo;
+    });
+
+    // Compressão da imagem em Canvas para economizar franquia do banco
+    fotoInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800; // Redimensiona para no máximo 800px
+          const scale = MAX_WIDTH / img.width;
+          canvas.width = (img.width > MAX_WIDTH) ? MAX_WIDTH : img.width;
+          canvas.height = (img.width > MAX_WIDTH) ? img.height * scale : img.height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob((blob) => {
+            compressedBlob = blob;
+            previewContainer.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="Preview">`;
+          }, 'image/jpeg', 0.75); // Qualidade 75% (~80KB a 150KB por foto)
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Envio para o Supabase
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      btnSalvar.disabled = true;
+      btnSalvar.textContent = "Gravando dados e enviando foto...";
+      statusMsg.style.display = 'none';
+
+      const turma = document.getElementById('turma').value.trim();
+      const grupo = document.getElementById('grupo').value.trim();
+      const categoria = document.getElementById('categoria').value;
+      const identificacao = document.getElementById('identificacao').value.trim();
+      const padraoFisico = document.getElementById('padraoFisico').value.trim();
+      const descricao = document.getElementById('descricao').value.trim();
+      const tecnologias = document.getElementById('tecnologias').value.trim();
+
+      // Salva no navegador local da equipe
+      localStorage.setItem('lab_turma', turma);
+      localStorage.setItem('lab_grupo', grupo);
+
+      try {
+        let imagem_url = null;
+
+        // 1. Upload da imagem no Supabase Storage (se houver foto)
+        if (compressedBlob) {
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('hardware-fotos')
+            .upload(fileName, compressedBlob, { contentType: 'image/jpeg' });
+
+          if (uploadError) throw new Error("Erro no upload da foto: " + uploadError.message);
+
+          const { data: publicUrlData } = supabase.storage
+            .from('hardware-fotos')
+            .getPublicUrl(fileName);
+
+          imagem_url = publicUrlData.publicUrl;
+        }
+
+        // 2. Gravação dos dados no PostgreSQL do Supabase
+        const { error: dbError } = await supabase
+          .from('levantamento_hardware')
+          .insert([{
+            turma,
+            grupo,
+            categoria,
+            identificacao,
+            padrao_fisico: padraoFisico || null,
+            descricao,
+            tecnologias: tecnologias || null,
+            imagem_url
+          }]);
+
+        if (dbError) throw new Error("Erro ao salvar no banco: " + dbError.message);
+
+        // Feedback de sucesso
+        statusMsg.className = 'status-msg status-success';
+        statusMsg.textContent = "Item cadastrado com sucesso no banco de dados!";
+        statusMsg.style.display = 'block';
+
+        // Limpa apenas os campos do item (mantém Turma e Grupo)
+        document.getElementById('categoria').value = '';
+        document.getElementById('identificacao').value = '';
+        document.getElementById('padraoFisico').value = '';
+        document.getElementById('descricao').value = '';
+        document.getElementById('tecnologias').value = '';
+        document.getElementById('fotoInput').value = '';
+        previewContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma foto selecionada</span>';
+        compressedBlob = null;
+
+      } catch (err) {
+        statusMsg.className = 'status-msg status-error';
+        statusMsg.textContent = err.message;
+        statusMsg.style.display = 'block';
+      } finally {
+        btnSalvar.disabled = false;
+        btnSalvar.textContent = "Enviar Registro para o Banco";
+      }
+    });
+  </script>
+</body>
+</html>
