@@ -16,10 +16,11 @@
       --accent: #2563eb;
       --accent-hover: #1d4ed8;
       --success: #16a34a;
+      --danger: #dc2626;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 20px 12px; line-height: 1.5; }
-    .container { max-width: 900px; margin: 0 auto; }
+    .container { max-width: 960px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 24px; }
     header h1 { font-size: 1.6rem; margin-bottom: 6px; }
     header p { color: var(--text-muted); font-size: 0.9rem; }
@@ -30,6 +31,7 @@
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
     }
     .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
     @media (min-width: 768px) {
@@ -57,6 +59,9 @@
       border-bottom: 1px solid var(--border);
       padding-bottom: 6px;
       margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     button {
@@ -74,9 +79,19 @@
       gap: 8px;
       width: 100%;
       margin-top: 10px;
+      transition: background-color 0.2s;
     }
     button:disabled { background: #475569; cursor: not-allowed; }
     button:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .btn-sm {
+      width: auto;
+      margin-top: 0;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      background: #334155;
+    }
+    .btn-sm:hover { background: #475569; }
 
     .status-msg {
       margin-top: 12px;
@@ -100,6 +115,50 @@
       overflow: hidden;
     }
     .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    /* Estilos da Tabela de Conferência */
+    .table-responsive {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    th {
+      background: #172033;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .img-thumb {
+      width: 52px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      display: block;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      background: #334155;
+      color: #cbd5e1;
+    }
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 24px 0;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -109,6 +168,7 @@
       <p>Inventário de Hardware, Cabeamento e Análise de Tecnologias</p>
     </header>
 
+    <!-- FORMULÁRIO DE ENVIO -->
     <div class="card">
       <form id="labForm">
         <!-- IDENTIFICAÇÃO DA TURMA E EQUIPE -->
@@ -116,7 +176,7 @@
         <div class="grid grid-2" style="margin-bottom: 20px;">
           <div class="form-group">
             <label for="turma">Turma / Turno</label>
-            <input type="text" id="turma" placeholder="Ex: 2º Regular A, Turma 3001, Vespertino" required>
+            <input type="text" id="turma" placeholder="Ex: Turma 3001, 2º Regular A" required>
           </div>
           <div class="form-group">
             <label for="grupo">Identificação do Grupo / Integrantes</label>
@@ -173,7 +233,7 @@
           <div class="form-group">
             <label for="fotoInput">Tirar Foto ou Escolher Arquivo</label>
             <input type="file" id="fotoInput" accept="image/*" capture="environment">
-            <small style="color: var(--text-muted); font-size: 0.8rem;">A foto será comprimida automaticamente antes do envio.</small>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">A foto é comprimida automaticamente antes do envio.</small>
           </div>
           <div class="preview-box" id="previewContainer">
             <span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma foto selecionada</span>
@@ -183,6 +243,36 @@
         <button type="submit" id="btnSalvar">Enviar Registro para o Banco</button>
         <div id="statusMsg" class="status-msg"></div>
       </form>
+    </div>
+
+    <!-- LISTA DE ITENS ENVIADOS PELO GRUPO -->
+    <div class="card">
+      <div class="section-title">
+        <span>Itens Enviados pelo Grupo (<span id="contagemItens">0</span>)</span>
+        <button type="button" id="btnRecarregar" class="btn-sm">🔄 Atualizar Lista</button>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
+        Exibindo envios vinculados a: <strong id="filtroAtual" style="color: #93c5fd;">Preencha Turma e Grupo acima</strong>
+      </p>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 70px;">Foto</th>
+              <th>Identificação / Categoria</th>
+              <th>Padrão / Soquete</th>
+              <th>Descrição & Tecnologia</th>
+              <th style="width: 100px;">Horário</th>
+            </tr>
+          </thead>
+          <tbody id="listaItensBody">
+            <tr>
+              <td colspan="5" class="empty-state">Nenhum item carregado. Preencha Turma e Grupo.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -200,16 +290,29 @@
     const previewContainer = document.getElementById('previewContainer');
     const btnSalvar = document.getElementById('btnSalvar');
     const statusMsg = document.getElementById('statusMsg');
+    const turmaInput = document.getElementById('turma');
+    const grupoInput = document.getElementById('grupo');
+    const listaItensBody = document.getElementById('listaItensBody');
+    const contagemItens = document.getElementById('contagemItens');
+    const filtroAtual = document.getElementById('filtroAtual');
+    const btnRecarregar = document.getElementById('btnRecarregar');
 
-    // Recupera a Turma e o Grupo do localStorage para a equipe não precisar redigitar toda vez
+    // Inicialização ao carregar página
     window.addEventListener('DOMContentLoaded', () => {
       const savedTurma = localStorage.getItem('lab_turma');
       const savedGrupo = localStorage.getItem('lab_grupo');
-      if (savedTurma) document.getElementById('turma').value = savedTurma;
-      if (savedGrupo) document.getElementById('grupo').value = savedGrupo;
+      if (savedTurma) turmaInput.value = savedTurma;
+      if (savedGrupo) grupoInput.value = savedGrupo;
+
+      carregarItensDoGrupo();
     });
 
-    // Compressão da imagem em Canvas para economizar franquia do banco
+    // Atualiza a lista quando o aluno termina de digitar turma ou grupo
+    turmaInput.addEventListener('blur', carregarItensDoGrupo);
+    grupoInput.addEventListener('blur', carregarItensDoGrupo);
+    btnRecarregar.addEventListener('click', carregarItensDoGrupo);
+
+    // Compressão da imagem em Canvas
     fotoInput.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -219,7 +322,7 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800; // Redimensiona para no máximo 800px
+          const MAX_WIDTH = 800;
           const scale = MAX_WIDTH / img.width;
           canvas.width = (img.width > MAX_WIDTH) ? MAX_WIDTH : img.width;
           canvas.height = (img.width > MAX_WIDTH) ? img.height * scale : img.height;
@@ -230,7 +333,7 @@
           canvas.toBlob((blob) => {
             compressedBlob = blob;
             previewContainer.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="Preview">`;
-          }, 'image/jpeg', 0.75); // Qualidade 75% (~80KB a 150KB por foto)
+          }, 'image/jpeg', 0.75);
         };
         img.src = event.target.result;
       };
@@ -244,25 +347,24 @@
       btnSalvar.textContent = "Gravando dados e enviando foto...";
       statusMsg.style.display = 'none';
 
-      const turma = document.getElementById('turma').value.trim();
-      const grupo = document.getElementById('grupo').value.trim();
+      const turma = turmaInput.value.trim();
+      const grupo = grupoInput.value.trim();
       const categoria = document.getElementById('categoria').value;
       const identificacao = document.getElementById('identificacao').value.trim();
       const padraoFisico = document.getElementById('padraoFisico').value.trim();
       const descricao = document.getElementById('descricao').value.trim();
       const tecnologias = document.getElementById('tecnologias').value.trim();
 
-      // Salva no navegador local da equipe
       localStorage.setItem('lab_turma', turma);
       localStorage.setItem('lab_grupo', grupo);
 
       try {
         let imagem_url = null;
 
-        // 1. Upload da imagem no Supabase Storage (se houver foto)
+        // 1. Upload da imagem (se houver)
         if (compressedBlob) {
           const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('hardware-fotos')
             .upload(fileName, compressedBlob, { contentType: 'image/jpeg' });
 
@@ -275,7 +377,7 @@
           imagem_url = publicUrlData.publicUrl;
         }
 
-        // 2. Gravação dos dados no PostgreSQL do Supabase
+        // 2. Gravação no PostgreSQL
         const { error: dbError } = await supabase
           .from('levantamento_hardware')
           .insert([{
@@ -293,10 +395,10 @@
 
         // Feedback de sucesso
         statusMsg.className = 'status-msg status-success';
-        statusMsg.textContent = "Item cadastrado com sucesso no banco de dados!";
+        statusMsg.textContent = "Item gravado com sucesso!";
         statusMsg.style.display = 'block';
 
-        // Limpa apenas os campos do item (mantém Turma e Grupo)
+        // Limpa campos do item
         document.getElementById('categoria').value = '';
         document.getElementById('identificacao').value = '';
         document.getElementById('padraoFisico').value = '';
@@ -305,6 +407,9 @@
         document.getElementById('fotoInput').value = '';
         previewContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma foto selecionada</span>';
         compressedBlob = null;
+
+        // Atualiza a tabela imediatamente
+        carregarItensDoGrupo();
 
       } catch (err) {
         statusMsg.className = 'status-msg status-error';
@@ -315,6 +420,67 @@
         btnSalvar.textContent = "Enviar Registro para o Banco";
       }
     });
+
+    // Função para buscar e listar os itens enviados pelo grupo atual
+    async function carregarItensDoGrupo() {
+      const turma = turmaInput.value.trim();
+      const grupo = grupoInput.value.trim();
+
+      if (!turma || !grupo) {
+        filtroAtual.textContent = "Preencha Turma e Grupo acima";
+        listaItensBody.innerHTML = '<tr><td colspan="5" class="empty-state">Informe Turma e Grupo para listar os envios.</td></tr>';
+        contagemItens.textContent = "0";
+        return;
+      }
+
+      filtroAtual.textContent = `${turma} — ${grupo}`;
+      listaItensBody.innerHTML = '<tr><td colspan="5" class="empty-state">Consultando banco de dados...</td></tr>';
+
+      try {
+        const { data, error } = await supabase
+          .from('levantamento_hardware')
+          .select('*')
+          .eq('turma', turma)
+          .eq('grupo', grupo)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        contagemItens.textContent = data.length;
+
+        if (!data || data.length === 0) {
+          listaItensBody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhum item cadastrado por este grupo ainda.</td></tr>';
+          return;
+        }
+
+        listaItensBody.innerHTML = '';
+        data.forEach(item => {
+          const hora = new Date(item.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          const imgCell = item.imagem_url 
+            ? `<a href="${item.imagem_url}" target="_blank"><img src="${item.imagem_url}" class="img-thumb" alt="Foto"></a>` 
+            : '<span style="color: var(--text-muted); font-size: 0.75rem;">Sem foto</span>';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${imgCell}</td>
+            <td>
+              <strong>${item.identificacao}</strong><br>
+              <span class="badge">${item.categoria}</span>
+            </td>
+            <td>${item.padrao_fisico || '<span style="color: var(--text-muted);">-</span>'}</td>
+            <td>
+              <div style="font-size: 0.85rem;">${item.descricao}</div>
+              ${item.tecnologias ? `<div style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;"><strong>Tecnologias:</strong> ${item.tecnologias}</div>` : ''}
+            </td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${hora}</td>
+          `;
+          listaItensBody.appendChild(tr);
+        });
+
+      } catch (err) {
+        listaItensBody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color: #fca5a5;">Erro ao carregar lista: ${err.message}</td></tr>`;
+      }
+    }
   </script>
 </body>
 </html>
